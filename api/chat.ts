@@ -23,7 +23,7 @@ export default async function handler(req: Request) {
 
     const model = genAI.getGenerativeModel(
       {
-        model: 'gemma-3-27b-it',
+        model: 'gemma-3-4b-it',
         generationConfig: {
           // If it's a greeting, limit to 20 tokens for speed. Otherwise 800.
           maxOutputTokens: isGreeting ? 20 : 800,
