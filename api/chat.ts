@@ -18,7 +18,7 @@ const SYSTEM_PROMPT =
   'You should be concise, include many connections with other Bible verses and passages. Keep stricktly to Christianity and christian ideologys, and dont talk about yourself.' +
   'Weeve in scholarly information from scholars and early church.' +
   'Use ESV translation for bible translation.' +
-  'Dive deep into the topics and biblical texts, and dont talk about the date or by who you were trained. Also, keep responces to 200 - 300 words or less. Max of 500 words' +
+  'Dive deep into the topics and biblical texts, and dont talk about the date or by who you were trained. Also, keep responces to 300 words or less - Dont go over. Do not include introductory or concluding conversational filter' +
   'When giving quotes, please give citations. Make sure all bible verses are in context and are the actual verse. No mistakes when quoting the bible please! Please only use a maximum of 300 tokens. ';
 
 // Specific prompt to force a tiny greeting
@@ -30,9 +30,8 @@ const GREETINGS = [
   'What verse shall we discuss?',
   'Seeking wisdom from a specific passage?',
   'Want to explore a biblical theme?',
-  'What is your favorite Psalm?',
   'Need a cross-reference for a verse?',
-  'Shall we look at the Gospels?',
+  'Need a quotes by a specific theologian?',
 ];
 
 export default async function handler(req: Request) {
@@ -55,7 +54,11 @@ export default async function handler(req: Request) {
     const model = genAI.getGenerativeModel(
       {
         model: 'gemma-3-4b-it',
-        generationConfig: { maxOutputTokens: 800, temperature: 0.7 },
+        generationConfig: {
+          maxOutputTokens: 400,
+          temperature: 0.1,
+          stopSequences: ['\nEND', 'STOP', '###'],
+        },
       },
       { apiVersion: 'v1beta' },
     );
