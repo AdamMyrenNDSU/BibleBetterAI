@@ -10,10 +10,7 @@ export default async function handler(req: Request) {
     const genAI = new GoogleGenerativeAI(apiKey);
 
     // Using v1beta is crucial for Gemma 3 models in many SDK versions
-    const model = genAI.getGenerativeModel(
-      { model: 'models/gemma-3-27b-it' },
-      { apiVersion: 'v1beta' },
-    );
+    const model = genAI.getGenerativeModel({ model: 'gemma-3-27b-it' }, { apiVersion: 'v1beta' });
 
     const result = await model.generateContent(prompt);
     const response = await result.response;
