@@ -1,42 +1,40 @@
-// api/chat.ts
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { Component } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { FormsModule } from '@angular/forms';
+import { CommonModule } from '@angular/common';
+import { firstValueFrom } from 'rxjs';
 
-export const config = { runtime: 'edge' };
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  // We import CommonModule for *ngIf and FormsModule for [(ngModel)]
+  imports: [CommonModule, FormsModule],
+  templateUrl: './app.component.html',
+  styleUrls: ['./app.component.css'],
+})
+export class AppComponent {
+  userInput = '';
+  gemmaResponse = '';
+  loading = false;
 
-export default async function handler(req: Request) {
-  try {
-    const { prompt } = await req.json();
-    const apiKey = (globalThis as any).process?.env?.['GOOGLE_API_KEY'];
-    const genAI = new GoogleGenerativeAI(apiKey);
+  constructor(private http: HttpClient) {}
 
-    const model = genAI.getGenerativeModel({ model: 'gemma-3-27b-it' }, { apiVersion: 'v1beta' });
+  async sendToGemma(prompt: string) {
+    if (!prompt.trim()) return;
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
+    this.loading = true;
+    this.gemmaResponse = ''; // Clear previous response
 
-    // MANUAL EXTRACTION: If .text() is empty, we dig into the parts
-    let textOutput = '';
     try {
-      textOutput = response.text();
-    } catch (e) {
-      // Fallback: Manually join all text parts from the first candidate
-      const parts = response.candidates?.[0]?.content?.parts || [];
-      textOutput = parts
-        .filter((part: any) => part.text)
-        .map((part: any) => part.text)
-        .join('');
-    }
+      // We call your Vercel /api/chat endpoint
+      const res = await firstValueFrom(this.http.post<{ text: string }>('/api/chat', { prompt }));
 
-    if (!textOutput) {
-      textOutput =
-        'Gemma received the request but returned an empty response. Check safety logs in AI Studio.';
+      this.gemmaResponse = res.text;
+    } catch (error) {
+      console.error('AI Error:', error);
+      this.gemmaResponse = "Sorry, I couldn't reach the Bible assistant right now.";
+    } finally {
+      this.loading = false;
     }
-
-    return new Response(JSON.stringify({ text: textOutput }), {
-      headers: { 'Content-Type': 'application/json' },
-    });
-  } catch (error: any) {
-    console.error('API Error:', error.message);
-    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
   }
 }
