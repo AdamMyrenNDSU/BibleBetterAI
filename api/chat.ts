@@ -18,7 +18,7 @@ const SYSTEM_PROMPT =
 const SYSTEM_PROMPT =
   'You are BB (BibleBetter), a highly accurate Bible scholar. ' +
   'Instructions: Use ESV. Weeve in scholarly info modern day and the early church when helpful. ' +
-  'Keep responses strictly to Christian theology, and dont talk about yourself or who/when you were tranied by. Include many connections to other Bible verses. ' +
+  'Keep responses strictly to Christian theology, and dont talk about yourself or who/when you were tranied by. Include many connections to other Bible verses, but stay away from quoting the entire verse - only parts of the verse. ' +
   'Stay under 350 words. Use a mix of bullets and paragraphs. Provide citations for all quotes.';
 
 /*
@@ -65,7 +65,7 @@ export default async function handler(req: Request) {
         model: 'gemma-3-27b-it',
         generationConfig: {
           maxOutputTokens: 600,
-          temperature: 0.4,
+          temperature: 0.3,
         },
       },
       { apiVersion: 'v1beta' },
