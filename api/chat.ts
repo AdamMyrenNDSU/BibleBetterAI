@@ -1,67 +1,44 @@
+// api/chat.ts
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 export const config = { runtime: 'edge' };
 
 export default async function handler(req: Request) {
   try {
-    const { prompt, stream } = await req.json();
-
-    // Access the API key
+    const { prompt } = await req.json();
     const apiKey = (globalThis as any).process?.env?.['GOOGLE_API_KEY'];
-
-    if (!apiKey) {
-      return new Response(JSON.stringify({ error: 'API Key is missing on Vercel' }), {
-        status: 500,
-      });
-    }
-
     const genAI = new GoogleGenerativeAI(apiKey);
 
-    // FIX: Remove 'models/' prefix when using the apiVersion setting
+    // Using v1beta is crucial for Gemma 3 models in many SDK versions
     const model = genAI.getGenerativeModel({ model: 'gemma-3-27b-it' }, { apiVersion: 'v1beta' });
 
-    // STREAMING MODE
-    if (stream) {
-      const result = await model.generateContentStream(prompt);
-      const encoder = new TextEncoder();
-      const readable = new ReadableStream({
-        async start(controller) {
-          try {
-            for await (const chunk of result.stream) {
-              const chunkText = chunk.text();
-              if (chunkText) {
-                controller.enqueue(encoder.encode(chunkText));
-              }
-            }
-          } catch (e) {
-            console.error('Stream error:', e);
-          } finally {
-            controller.close();
-          }
-        },
-      });
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
 
-      return new Response(readable, {
-        headers: {
-          'Content-Type': 'text/plain; charset=utf-8',
-          'Cache-Control': 'no-cache',
-          Connection: 'keep-alive',
-        },
+    // 1. Check if the response was blocked by safety filters
+    if (!response.candidates || response.candidates.length === 0) {
+      return new Response(JSON.stringify({ text: 'Response was blocked by safety filters.' }), {
+        status: 200,
       });
     }
 
-    // NON-STREAM MODE
-    const result = await model.generateContent(prompt);
-    const responseText = result.response.text();
+    const candidate = response.candidates[0];
 
-    return new Response(JSON.stringify({ text: responseText }), {
+    // 2. Check for specific finish reasons
+    if (candidate.finishReason === 'SAFETY') {
+      return new Response(
+        JSON.stringify({ text: "I'm sorry, I cannot answer that due to safety guidelines." }),
+        { status: 200 },
+      );
+    }
+
+    // 3. Safely extract text
+    const text = response.text();
+    return new Response(JSON.stringify({ text: text || 'Gemma produced an empty response.' }), {
       headers: { 'Content-Type': 'application/json' },
     });
-  } catch (err: any) {
-    console.error('Handler Error:', err.message);
-    return new Response(JSON.stringify({ error: err.message }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+  } catch (error: any) {
+    console.error('Gemma API Error:', error);
+    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
   }
 }
