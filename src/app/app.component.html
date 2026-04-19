@@ -1,12 +1,14 @@
+<!-- app.component.html -->
 <div style="padding: 20px">
   <h1>BibleBetterAI</h1>
-  <textarea #inputBox [(ngModel)]="userInput" placeholder="Ask a Bible question..."></textarea>
+  <textarea [(ngModel)]="userInput" placeholder="Ask a Bible question..."></textarea>
   <button (click)="sendToGemma(userInput)" [disabled]="loading">
     {{ loading ? 'Searching...' : 'Ask Gemma' }}
   </button>
 
-  <div *ngIf="gemmaResponse" style="margin-top: 20px; white-space: pre-wrap">
+  <!-- Add the () to the variable name -->
+  <div *ngIf="gemmaResponse()" style="margin-top: 20px; white-space: pre-wrap">
     <strong>Response:</strong>
-    <p>{{ gemmaResponse }}</p>
+    <p>{{ gemmaResponse() }}</p>
   </div>
 </div>
