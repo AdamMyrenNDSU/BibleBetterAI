@@ -1,4 +1,3 @@
-// api/chat.ts
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 export const config = { runtime: 'edge' };
@@ -6,36 +5,39 @@ export const config = { runtime: 'edge' };
 export default async function handler(req: Request) {
   try {
     const { prompt, stream } = await req.json();
+
+    // Access the API key
     const apiKey = (globalThis as any).process?.env?.['GOOGLE_API_KEY'];
+
+    if (!apiKey) {
+      return new Response(JSON.stringify({ error: 'API Key is missing on Vercel' }), {
+        status: 500,
+      });
+    }
+
     const genAI = new GoogleGenerativeAI(apiKey);
 
-    // Using v1beta is crucial for Gemma 3 models in many SDK versions
-    const model = genAI.getGenerativeModel(
-      { model: 'models/gemma-3-27b-it' },
-      { apiVersion: 'v1beta' },
-    );
-
-    /*const model = genAI.getGenerativeModel({
-      model: 'gemma-3-27b-it',
-      generationConfig: {
-        maxOutputTokens: 1000,
-        temperature: 0.7,
-        topP: 0.9,
-        topK: 40,
-      },
-    });*/
+    // FIX: Remove 'models/' prefix when using the apiVersion setting
+    const model = genAI.getGenerativeModel({ model: 'gemma-3-27b-it' }, { apiVersion: 'v1beta' });
 
     // STREAMING MODE
     if (stream) {
       const result = await model.generateContentStream(prompt);
-
       const encoder = new TextEncoder();
       const readable = new ReadableStream({
         async start(controller) {
-          for await (const chunk of result.stream) {
-            controller.enqueue(encoder.encode(chunk.text()));
+          try {
+            for await (const chunk of result.stream) {
+              const chunkText = chunk.text();
+              if (chunkText) {
+                controller.enqueue(encoder.encode(chunkText));
+              }
+            }
+          } catch (e) {
+            console.error('Stream error:', e);
+          } finally {
+            controller.close();
           }
-          controller.close();
         },
       });
 
@@ -43,14 +45,23 @@ export default async function handler(req: Request) {
         headers: {
           'Content-Type': 'text/plain; charset=utf-8',
           'Cache-Control': 'no-cache',
+          Connection: 'keep-alive',
         },
       });
     }
 
     // NON-STREAM MODE
     const result = await model.generateContent(prompt);
-    return Response.json({ text: result.response.text() });
+    const responseText = result.response.text();
+
+    return new Response(JSON.stringify({ text: responseText }), {
+      headers: { 'Content-Type': 'application/json' },
+    });
   } catch (err: any) {
-    return Response.json({ error: err.message }, { status: 500 });
+    console.error('Handler Error:', err.message);
+    return new Response(JSON.stringify({ error: err.message }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 }
