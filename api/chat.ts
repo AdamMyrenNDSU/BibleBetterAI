@@ -5,7 +5,7 @@ export const config = { runtime: 'edge' };
 
 export default async function handler(req: Request) {
   try {
-    const { prompt } = await req.json();
+    const { prompt, stream } = await req.json();
     const apiKey = (globalThis as any).process?.env?.['GOOGLE_API_KEY'];
     const genAI = new GoogleGenerativeAI(apiKey);
 
@@ -15,33 +15,42 @@ export default async function handler(req: Request) {
       { apiVersion: 'v1beta' },
     );
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
+    /*const model = genAI.getGenerativeModel({
+      model: 'gemma-3-27b-it',
+      generationConfig: {
+        maxOutputTokens: 1000,
+        temperature: 0.7,
+        topP: 0.9,
+        topK: 40,
+      },
+    });*/
 
-    // 1. Check if the response was blocked by safety filters
-    if (!response.candidates || response.candidates.length === 0) {
-      return new Response(JSON.stringify({ text: 'Response was blocked by safety filters.' }), {
-        status: 200,
+    // STREAMING MODE
+    if (stream) {
+      const result = await model.generateContentStream(prompt);
+
+      const encoder = new TextEncoder();
+      const readable = new ReadableStream({
+        async start(controller) {
+          for await (const chunk of result.stream) {
+            controller.enqueue(encoder.encode(chunk.text()));
+          }
+          controller.close();
+        },
+      });
+
+      return new Response(readable, {
+        headers: {
+          'Content-Type': 'text/plain; charset=utf-8',
+          'Cache-Control': 'no-cache',
+        },
       });
     }
 
-    const candidate = response.candidates[0];
-
-    // 2. Check for specific finish reasons
-    if (candidate.finishReason === 'SAFETY') {
-      return new Response(
-        JSON.stringify({ text: "I'm sorry, I cannot answer that due to safety guidelines." }),
-        { status: 200 },
-      );
-    }
-
-    // 3. Safely extract text
-    const text = response.text();
-    return new Response(JSON.stringify({ text: text || 'Gemma produced an empty response.' }), {
-      headers: { 'Content-Type': 'application/json' },
-    });
-  } catch (error: any) {
-    console.error('Gemma API Error:', error);
-    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+    // NON-STREAM MODE
+    const result = await model.generateContent(prompt);
+    return Response.json({ text: result.response.text() });
+  } catch (err: any) {
+    return Response.json({ error: err.message }, { status: 500 });
   }
 }
