@@ -1,4 +1,4 @@
-import { Component, signal, ChangeDetectorRef } from '@angular/core';
+import { Component, ChangeDetectorRef } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
@@ -13,8 +13,7 @@ import { firstValueFrom } from 'rxjs';
 })
 export class AppComponent {
   userInput = '';
-  // Use a Signal to force the UI to react to changes
-  gemmaResponse = signal<string>('');
+  gemmaResponse = ''; // Plain string
   loading = false;
 
   constructor(
@@ -26,21 +25,19 @@ export class AppComponent {
     if (!prompt.trim()) return;
 
     this.loading = true;
-    this.gemmaResponse.set(''); // Clear previous
+    this.gemmaResponse = '';
 
     try {
       const res = await firstValueFrom(this.http.post<{ text: string }>('/api/chat', { prompt }));
 
-      // Update the signal
-      this.gemmaResponse.set(res.text);
-
-      // Manual fallback to tell Angular "hey, something changed!"
-      this.cdr.detectChanges();
+      // Assign the response text
+      this.gemmaResponse = res.text || 'Gemma returned an empty response.';
     } catch (error) {
-      this.gemmaResponse.set("Sorry, I couldn't reach Gemma right now.");
-      this.cdr.detectChanges();
+      console.error('AI Error:', error);
+      this.gemmaResponse = "Sorry, I couldn't reach Gemma right now.";
     } finally {
       this.loading = false;
+      // Force Angular to update the UI immediately
       this.cdr.detectChanges();
     }
   }
