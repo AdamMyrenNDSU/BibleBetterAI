@@ -1,40 +1,24 @@
 // api/chat.ts
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-export const config = { runtime: 'edge' };
+export const config = {
+  runtime: 'edge',
+};
 
 export default async function handler(req: Request) {
   try {
     const { prompt } = await req.json();
     const apiKey = (globalThis as any).process?.env?.['GOOGLE_API_KEY'];
+
     const genAI = new GoogleGenerativeAI(apiKey);
 
-    // Using v1beta is crucial for Gemma 3 models in many SDK versions
+    // Explicitly set apiVersion to 'v1beta'
     const model = genAI.getGenerativeModel({ model: 'gemma-3-27b-it' }, { apiVersion: 'v1beta' });
 
     const result = await model.generateContent(prompt);
     const response = await result.response;
 
-    // 1. Check if the response was blocked by safety filters
-    if (!response.candidates || response.candidates.length === 0) {
-      return new Response(JSON.stringify({ text: 'Response was blocked by safety filters.' }), {
-        status: 200,
-      });
-    }
-
-    const candidate = response.candidates[0];
-
-    // 2. Check for specific finish reasons
-    if (candidate.finishReason === 'SAFETY') {
-      return new Response(
-        JSON.stringify({ text: "I'm sorry, I cannot answer that due to safety guidelines." }),
-        { status: 200 },
-      );
-    }
-
-    // 3. Safely extract text
-    const text = response.text();
-    return new Response(JSON.stringify({ text: text || 'Gemma produced an empty response.' }), {
+    return new Response(JSON.stringify({ text: response.text() }), {
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (error: any) {
