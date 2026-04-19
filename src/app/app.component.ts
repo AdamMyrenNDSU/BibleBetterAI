@@ -1,54 +1,110 @@
-import { Component, ChangeDetectorRef } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import {
+  Component,
+  signal,
+  OnInit,
+  ViewChildren,
+  ElementRef,
+  QueryList,
+  ChangeDetectorRef,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [FormsModule, CommonModule],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css'],
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
+  @ViewChildren('messageRow') messageRows!: QueryList<ElementRef>;
+
+  messages = signal<{ role: string; text: string }[]>([]);
   userInput = '';
-  gemmaResponse = ''; // Plain string
-  loading = false;
+  isTyping = false;
 
-  constructor(
-    private http: HttpClient,
-    private cdr: ChangeDetectorRef,
-  ) {}
+  constructor(private cdr: ChangeDetectorRef) {}
 
-  async sendToGemma(prompt: string) {
-    if (!prompt.trim()) return;
+  ngOnInit() {
+    this.initialGreeting();
+  }
 
-    this.loading = true;
-    this.gemmaResponse = '';
+  private scrollToLastUserMessage() {
+    setTimeout(() => {
+      const userMessages = this.messageRows
+        .toArray()
+        .filter((el) => el.nativeElement.classList.contains('user'));
+      if (userMessages.length > 0) {
+        userMessages[userMessages.length - 1].nativeElement.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start',
+        });
+      }
+    }, 100);
+  }
 
-    // 2. STRICT SYSTEM INSTRUCTION
-    // This tells Gemma exactly how to behave before adding the user's question.
-    const systemInstruction =
-      'You are a concise Bible scholar. Provide the relevant verse(s) and a maximum 2-sentence explanation. Be brief to ensure a fast response. Stay under 150 words.';
+  async initialGreeting() {
+    this.isTyping = true;
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        body: JSON.stringify({ prompt: 'Give a 3-5 word welcome question about the Bible.' }),
+      });
+      const text = await response.text();
+      // Remove the split marker if it exists in non-streamed initial greeting
+      const cleanText =
+        text
+          .split('[[SPLIT]]')
+          .reverse()
+          .find((t) => t.length > 0) || text;
+      this.messages.update((prev) => [...prev, { role: 'ai', text: cleanText }]);
+    } finally {
+      this.isTyping = false;
+      this.cdr.detectChanges();
+    }
+  }
 
-    const finalPrompt = `${systemInstruction}\n\nUser Question: ${prompt}`;
+  async send() {
+    if (!this.userInput.trim() || this.isTyping) return;
+
+    const userText = this.userInput;
+    this.userInput = '';
+    this.messages.update((prev) => [
+      ...prev,
+      { role: 'user', text: userText },
+      { role: 'ai', text: '' },
+    ]);
+    this.isTyping = true;
+    this.scrollToLastUserMessage();
 
     try {
-      // Sending the combined prompt to your Vercel /api/chat endpoint
-      const res = await firstValueFrom(
-        this.http.post<{ text: string }>('/api/chat', { prompt: finalPrompt }),
-      );
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        body: JSON.stringify({ prompt: userText }),
+      });
 
-      // Assign the response text
-      this.gemmaResponse = res.text || 'Gemma returned an empty response.';
-    } catch (error) {
-      console.error('AI Error:', error);
-      this.gemmaResponse =
-        "Sorry, I couldn't reach Gemma right now. The request might have timed out.";
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+
+      while (reader) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        // Get the latest full markdown-to-html transformation from the stream
+        const parts = chunk.split('[[SPLIT]]').filter((p) => p.length > 0);
+        if (parts.length > 0) {
+          this.messages.update((prev) => {
+            const next = [...prev];
+            next[next.length - 1] = { role: 'ai', text: parts[parts.length - 1] };
+            return next;
+          });
+          this.cdr.detectChanges();
+        }
+      }
     } finally {
-      this.loading = false;
-      // Force Angular to update the UI immediately
+      this.isTyping = false;
       this.cdr.detectChanges();
     }
   }

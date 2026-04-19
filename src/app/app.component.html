@@ -1,30 +1,48 @@
-<div style="padding: 20px">
-  <h1>BibleBetterAI</h1>
+<div class="gemini-wrapper" [class.is-hero]="messages().length <= 1">
+  <header class="chat-header">
+    <span class="logo">BetterBibleAI</span>
+  </header>
 
-  <textarea
-    [(ngModel)]="userInput"
-    placeholder="Ask a Bible question..."
-    rows="4"
-    style="width: 100%; margin-bottom: 10px"
-  >
-  </textarea>
+  <main class="chat-window">
+    <div class="message-list" [class.is-thinking]="isTyping">
+      <div
+        #messageRow
+        *ngFor="let msg of messages(); let first = first"
+        [ngClass]="[msg.role, first && messages().length === 1 ? 'hero-greeting' : '']"
+        class="message-row"
+      >
+        <div class="avatar" [attr.data-role]="msg.role"></div>
+        <div class="content">
+          <div class="sender-name">{{ msg.role === 'user' ? 'You' : 'BB' }}</div>
+          <div class="text-body" [innerHTML]="msg.text"></div>
+        </div>
+      </div>
 
-  <button (click)="sendToGemma(userInput)" [disabled]="loading">
-    {{ loading ? 'Searching...' : 'Ask Gemma' }}
-  </button>
+      <div *ngIf="isTyping" class="message-row ai">
+        <div class="avatar" data-role="ai"></div>
+        <div class="loading-skeleton">
+          <div class="skeleton-line"></div>
+          <div class="skeleton-line short"></div>
+        </div>
+      </div>
+    </div>
+  </main>
 
-  <!-- Remove the () here -->
-  <div
-    *ngIf="gemmaResponse"
-    style="
-      margin-top: 20px;
-      white-space: pre-wrap;
-      background: #f9f9f9;
-      padding: 15px;
-      border-radius: 8px;
-    "
-  >
-    <strong>Response:</strong>
-    <p>{{ gemmaResponse }}</p>
-  </div>
+  <footer class="input-container">
+    <div class="input-pill">
+      <input
+        [(ngModel)]="userInput"
+        (keyup.enter)="send()"
+        placeholder="Ask BetterBible anything..."
+      />
+      <button (click)="send()" [disabled]="!userInput.trim() || isTyping">
+        <svg viewBox="0 0 24 24" width="24" height="24">
+          <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" fill="currentColor" />
+        </svg>
+      </button>
+    </div>
+    <div class="footer-note">
+      BetterBibleAI is a digital assistant and may provide inaccurate information.
+    </div>
+  </footer>
 </div>

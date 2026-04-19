@@ -1,0 +1,282 @@
+:host {
+  --primary-bg: #131314;
+  --secondary-bg: #1e1f20;
+  --text-main: #e3e3e3;
+  --text-sub: #c4c7c5;
+  --accent-blue: #a8c7fa;
+  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* 1. LAYOUT WRAPPER */
+.gemini-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  background: var(--primary-bg);
+  color: var(--text-main);
+  position: fixed;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+}
+
+/* 2. FIXED HEADER */
+.chat-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  padding: 16px 24px;
+  font-size: 18px;
+  font-weight: 500;
+  background: var(--primary-bg);
+  z-index: 100;
+}
+
+/* 3. CHAT WINDOW & VERTICAL SCROLLING */
+.chat-window {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  padding-top: 60px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: relative;
+}
+
+.message-list {
+  width: 100%;
+  max-width: 800px;
+  padding: 10px 15px;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 4. HERO STATE */
+.is-hero .chat-window {
+  justify-content: flex-end;
+  position: relative;
+}
+
+.is-hero .message-list {
+  flex: 0 1 auto;
+  align-items: center;
+  padding-bottom: 24px;
+}
+
+.is-hero .input-container {
+  padding-bottom: 30vh;
+}
+
+/* HERO GREETING - TRANSITION LOGIC */
+.hero-greeting {
+  display: flex;
+  width: 100%;
+  gap: 12px;
+  margin-bottom: 20px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.is-hero .hero-greeting {
+  flex-direction: column !important;
+  align-items: center !important;
+  text-align: center;
+  gap: 0 !important;
+  position: absolute;
+  bottom: 6vh;
+  left: 0;
+  right: 0;
+  margin: auto;
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+.is-hero .hero-greeting .avatar {
+  width: clamp(80px, 15vw, 120px);
+  height: clamp(80px, 15vw, 120px);
+  margin-bottom: 20px;
+  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.is-hero .hero-greeting .text-body {
+  background: transparent !important;
+  font-size: clamp(16px, 5.5vw, 48px) !important;
+  font-weight: 500;
+  color: var(--text-main);
+  line-height: 1.4;
+  padding: 0 !important;
+  box-shadow: none !important;
+  white-space: nowrap !important;
+  display: block !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100% !important;
+  width: auto;
+  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.gemini-wrapper:not(.is-hero) .hero-greeting {
+  flex-direction: row !important;
+  align-items: flex-start !important;
+  text-align: left;
+}
+
+.gemini-wrapper:not(.is-hero) .hero-greeting .avatar {
+  width: 32px !important;
+  height: 32px !important;
+  margin-bottom: 0;
+}
+
+.gemini-wrapper:not(.is-hero) .hero-greeting .text-body {
+  background: var(--secondary-bg) !important;
+  font-size: 18px !important;
+  padding: 12px 18px !important;
+  color: var(--text-sub);
+  white-space: pre-wrap !important;
+}
+
+/* 5. MESSAGES & BUBBLES */
+.message-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+  width: 100%;
+  scroll-margin-top: 70px;
+}
+
+.message-row.user {
+  flex-direction: row-reverse;
+}
+
+.sender-name {
+  font-weight: 600;
+  font-size: 15px;
+  margin-bottom: 6px;
+}
+
+.text-body {
+  line-height: 1.45;
+  font-size: 18px;
+  color: #dfdfdf;
+  background: #2a2b2d;
+  padding: 12px 18px;
+  border-radius: 24px !important;
+  max-width: 85%;
+  white-space: pre-wrap;
+  margin: 0;
+  word-wrap: break-word;
+}
+
+.user .text-body {
+  background: #37393b;
+}
+
+/* 6. SKELETON LOADING */
+.loading-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  max-width: 200px;
+}
+
+.skeleton-line {
+  height: 12px;
+  background: #2a2b2d;
+  border-radius: 4px;
+  animation: pulse 1.5s infinite ease-in-out;
+}
+
+.skeleton-line.short {
+  width: 60%;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.7;
+  }
+  100% {
+    opacity: 0.3;
+  }
+}
+
+/* 7. INPUT CONTAINER */
+.input-container {
+  width: 100%;
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: var(--primary-bg);
+  flex-shrink: 0;
+}
+
+.input-pill {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  max-width: 800px;
+  background: var(--secondary-bg);
+  border-radius: 28px;
+  padding: 4px 12px 4px 20px;
+}
+
+input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 12px 0;
+  font-size: 16px;
+  outline: none;
+  color: var(--text-main);
+}
+
+/* 8. AVATARS */
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50% !important;
+  flex-shrink: 0;
+}
+
+.avatar[data-role='user'] {
+  background: linear-gradient(315deg, #31dafc, #00aaff, #2f6ef7);
+}
+
+.avatar[data-role='ai'] {
+  background: linear-gradient(45deg, #4285f4, #9b72cb, #d96570);
+}
+
+/* 9. UTILS */
+.footer-note {
+  font-size: 10px;
+  color: #70757a;
+  margin-top: 8px;
+  text-align: center;
+}
+
+button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--accent-blue);
+}
+
+button:disabled {
+  color: #444746;
+}
+
+::ng-deep .text-body p {
+  margin-top: 4px;
+  margin-bottom: 4px;
+}
+::ng-deep .text-body strong {
+  color: #fff;
+  font-weight: 600;
+}

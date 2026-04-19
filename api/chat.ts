@@ -1,7 +1,10 @@
-// api/chat.ts
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { marked } from 'marked';
 
 export const config = { runtime: 'edge' };
+
+const SYSTEM_PROMPT =
+  'You are BB (BibleBetter), a concise Bible assistant. Use ESV. Include scholarly info and citations. Stay under 300 words.';
 
 export default async function handler(req: Request) {
   try {
@@ -10,42 +13,28 @@ export default async function handler(req: Request) {
     const genAI = new GoogleGenerativeAI(apiKey);
 
     const model = genAI.getGenerativeModel(
-      {
-        model: 'gemma-3-27b-it',
-        generationConfig: {
-          maxOutputTokens: 250, // Limit response length (crucial for speed)
-          temperature: 0.7, // Keep it creative but focused
-        },
-      },
+      { model: 'gemma-3-27b-it', generationConfig: { maxOutputTokens: 800, temperature: 0.7 } },
       { apiVersion: 'v1beta' },
     );
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
+    const result = await model.generateContentStream(`${SYSTEM_PROMPT}\n\nUser: ${prompt}`);
+    const encoder = new TextEncoder();
 
-    // MANUAL EXTRACTION: If .text() is empty, we dig into the parts
-    let textOutput = '';
-    try {
-      textOutput = response.text();
-    } catch (e) {
-      // Fallback: Manually join all text parts from the first candidate
-      const parts = response.candidates?.[0]?.content?.parts || [];
-      textOutput = parts
-        .filter((part: any) => part.text)
-        .map((part: any) => part.text)
-        .join('');
-    }
-
-    if (!textOutput) {
-      textOutput =
-        'Gemma received the request but returned an empty response. Check safety logs in AI Studio.';
-    }
-
-    return new Response(JSON.stringify({ text: textOutput }), {
-      headers: { 'Content-Type': 'application/json' },
+    const readable = new ReadableStream({
+      async start(controller) {
+        let cumulativeText = '';
+        for await (const chunk of result.stream) {
+          cumulativeText += chunk.text();
+          // We parse markdown on the server so the client gets clean HTML
+          const html = await marked.parse(cumulativeText);
+          controller.enqueue(encoder.encode(html + '[[SPLIT]]'));
+        }
+        controller.close();
+      },
     });
-  } catch (error: any) {
-    console.error('API Error:', error.message);
-    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+
+    return new Response(readable, { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+  } catch (err: any) {
+    return new Response(JSON.stringify({ error: err.message }), { status: 500 });
   }
 }
