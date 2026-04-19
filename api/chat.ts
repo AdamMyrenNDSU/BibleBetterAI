@@ -18,6 +18,15 @@ export default async function handler(req: Request) {
     const result = await model.generateContent(prompt);
     const response = await result.response;
 
+    const candidate = response.candidates?.[0];
+    if (!candidate || candidate.finishReason === 'SAFETY') {
+      return new Response(
+        JSON.stringify({
+          text: "I'm sorry, I can't generate a response for that prompt due to safety filters.",
+        }),
+        { headers: { 'Content-Type': 'application/json' } },
+      );
+    }
     return new Response(JSON.stringify({ text: response.text() }), {
       headers: { 'Content-Type': 'application/json' },
     });

@@ -1,13 +1,12 @@
-<div style="padding: 20px; font-family: sans-serif">
-  <h2>Gemma 3-27B Assistant</h2>
-  <textarea #inputBox placeholder="Ask something..." rows="4" style="width: 100%"></textarea>
-  <br />
-  <button (click)="sendToGemma(inputBox.value)" [disabled]="loading">
-    {{ loading ? 'Thinking...' : 'Ask Gemma' }}
+<div style="padding: 20px">
+  <h1>BibleBetterAI</h1>
+  <textarea #inputBox [(ngModel)]="userInput" placeholder="Ask a Bible question..."></textarea>
+  <button (click)="sendToGemma(userInput)" [disabled]="loading">
+    {{ loading ? 'Searching...' : 'Ask Gemma' }}
   </button>
 
-  <div style="margin-top: 20px; white-space: pre-wrap; background: #f4f4f4; padding: 10px">
-    <strong>Gemma says:</strong>
+  <div *ngIf="gemmaResponse" style="margin-top: 20px; white-space: pre-wrap">
+    <strong>Response:</strong>
     <p>{{ gemmaResponse }}</p>
   </div>
 </div>
