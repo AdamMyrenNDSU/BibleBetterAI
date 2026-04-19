@@ -1,0 +1,13 @@
+<div style="padding: 20px; font-family: sans-serif">
+  <h2>Gemma 3-27B Assistant</h2>
+  <textarea #inputBox placeholder="Ask something..." rows="4" style="width: 100%"></textarea>
+  <br />
+  <button (click)="sendToGemma(inputBox.value)" [disabled]="loading">
+    {{ loading ? 'Thinking...' : 'Ask Gemma' }}
+  </button>
+
+  <div style="margin-top: 20px; white-space: pre-wrap; background: #f4f4f4; padding: 10px">
+    <strong>Gemma says:</strong>
+    <p>{{ gemmaResponse }}</p>
+  </div>
+</div>
