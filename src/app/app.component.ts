@@ -49,10 +49,15 @@ export class AppComponent implements OnInit {
     try {
       const response = await fetch('/api/chat', {
         method: 'POST',
-        body: JSON.stringify({ prompt: 'Give a 3-5 word welcome question about the Bible.' }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: 'Initial Greeting', // This value doesn't matter now
+          isGreeting: true, // CRITICAL: This triggers the list in chat.ts
+        }),
       });
+
       const data = await response.json();
-      this.messages.update((prev) => [...prev, { role: 'ai', text: data.text || '' }]);
+      this.messages.update((prev) => [...prev, { role: 'ai', text: data.text }]);
     } catch (e) {
       console.error(e);
     } finally {
