@@ -19,20 +19,16 @@ export class AppComponent {
 
   constructor(private http: HttpClient) {}
 
-  async sendToGemma() {
-    if (!this.userInput.trim()) return;
+  async sendToGemma(prompt: string) {
+    if (!prompt.trim()) return;
 
     this.loading = true;
     this.gemmaResponse = '';
 
     try {
-      // Calls your Vercel serverless function proxy
-      const res = await firstValueFrom(
-        this.http.post<{ text: string }>('/api/chat', { prompt: this.userInput }),
-      );
+      const res = await firstValueFrom(this.http.post<{ text: string }>('/api/chat', { prompt }));
       this.gemmaResponse = res.text;
     } catch (error) {
-      console.error('AI Error:', error);
       this.gemmaResponse = "Sorry, I couldn't reach Gemma right now.";
     } finally {
       this.loading = false;
