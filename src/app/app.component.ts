@@ -22,7 +22,7 @@ export class AppComponent implements OnInit {
 
   messages = signal<{ role: string; text: string }[]>([]);
   userInput = '';
-  isTyping = false;
+  isTyping = false; // This fixes the TS2339 error
 
   constructor(private cdr: ChangeDetectorRef) {}
 
@@ -51,14 +51,10 @@ export class AppComponent implements OnInit {
         method: 'POST',
         body: JSON.stringify({ prompt: 'Give a 3-5 word welcome question about the Bible.' }),
       });
-      const text = await response.text();
-      // Remove the split marker if it exists in non-streamed initial greeting
-      const cleanText =
-        text
-          .split('[[SPLIT]]')
-          .reverse()
-          .find((t) => t.length > 0) || text;
-      this.messages.update((prev) => [...prev, { role: 'ai', text: cleanText }]);
+      const data = await response.json();
+      this.messages.update((prev) => [...prev, { role: 'ai', text: data.text || '' }]);
+    } catch (e) {
+      console.error(e);
     } finally {
       this.isTyping = false;
       this.cdr.detectChanges();
@@ -66,6 +62,7 @@ export class AppComponent implements OnInit {
   }
 
   async send() {
+    // This fixes the TS2339: Property 'send' error
     if (!this.userInput.trim() || this.isTyping) return;
 
     const userText = this.userInput;
@@ -81,7 +78,7 @@ export class AppComponent implements OnInit {
     try {
       const response = await fetch('/api/chat', {
         method: 'POST',
-        body: JSON.stringify({ prompt: userText }),
+        body: JSON.stringify({ prompt: userText, stream: true }),
       });
 
       const reader = response.body?.getReader();
@@ -92,7 +89,6 @@ export class AppComponent implements OnInit {
         if (done) break;
 
         const chunk = decoder.decode(value);
-        // Get the latest full markdown-to-html transformation from the stream
         const parts = chunk.split('[[SPLIT]]').filter((p) => p.length > 0);
         if (parts.length > 0) {
           this.messages.update((prev) => {
@@ -103,6 +99,12 @@ export class AppComponent implements OnInit {
           this.cdr.detectChanges();
         }
       }
+    } catch (e) {
+      this.messages.update((prev) => {
+        const next = [...prev];
+        next[next.length - 1] = { role: 'ai', text: 'Error reaching AI.' };
+        return next;
+      });
     } finally {
       this.isTyping = false;
       this.cdr.detectChanges();

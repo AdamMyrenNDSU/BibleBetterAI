@@ -8,7 +8,7 @@ const SYSTEM_PROMPT =
 
 export default async function handler(req: Request) {
   try {
-    const { prompt } = await req.json();
+    const { prompt, stream } = await req.json();
     const apiKey = (globalThis as any).process?.env?.['GOOGLE_API_KEY'];
     const genAI = new GoogleGenerativeAI(apiKey);
 
@@ -17,23 +17,27 @@ export default async function handler(req: Request) {
       { apiVersion: 'v1beta' },
     );
 
-    const result = await model.generateContentStream(`${SYSTEM_PROMPT}\n\nUser: ${prompt}`);
-    const encoder = new TextEncoder();
+    if (stream) {
+      const result = await model.generateContentStream(`${SYSTEM_PROMPT}\n\nUser: ${prompt}`);
+      const encoder = new TextEncoder();
 
-    const readable = new ReadableStream({
-      async start(controller) {
-        let cumulativeText = '';
-        for await (const chunk of result.stream) {
-          cumulativeText += chunk.text();
-          // We parse markdown on the server so the client gets clean HTML
-          const html = await marked.parse(cumulativeText);
-          controller.enqueue(encoder.encode(html + '[[SPLIT]]'));
-        }
-        controller.close();
-      },
-    });
+      const readable = new ReadableStream({
+        async start(controller) {
+          let cumulativeText = '';
+          for await (const chunk of result.stream) {
+            cumulativeText += chunk.text();
+            const html = await marked.parse(cumulativeText);
+            controller.enqueue(encoder.encode(html + '[[SPLIT]]'));
+          }
+          controller.close();
+        },
+      });
+      return new Response(readable);
+    }
 
-    return new Response(readable, { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+    const result = await model.generateContent(`${SYSTEM_PROMPT}\n\nUser: ${prompt}`);
+    const html = await marked.parse(result.response.text());
+    return new Response(JSON.stringify({ text: html }));
   } catch (err: any) {
     return new Response(JSON.stringify({ error: err.message }), { status: 500 });
   }
