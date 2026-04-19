@@ -375,3 +375,32 @@ input {
     bottom: 15vh;
   }
 }
+
+/* 1. FADE IN ANIMATION */
+@keyframes wordFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hero-greeting .text-body {
+  animation: wordFadeIn 0.4s ease-out forwards;
+  /* Tighten space: Remove margins and set line-height */
+  margin-top: 0 !important;
+  line-height: 1.1 !important;
+}
+
+/* 2. TIGHTEN SPACING ON HERO */
+.is-hero .hero-greeting {
+  gap: 8px !important; /* Reduced space between avatar and words */
+}
+
+.is-hero .input-container {
+  /* Reduce space between the bottom input and the hero text */
+  padding-bottom: 20vh !important;
+}

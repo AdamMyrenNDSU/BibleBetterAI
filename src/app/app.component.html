@@ -13,7 +13,9 @@
       >
         <div class="avatar" [attr.data-role]="msg.role"></div>
         <div class="content">
-          <div class="sender-name">{{ msg.role === 'user' ? 'You' : 'BB' }}</div>
+          <div class="sender-name" *ngIf="!(i === 0 && messages().length === 1)">
+            {{ msg.role === 'user' ? 'You' : 'BB' }}
+          </div>
           <div class="text-body" [innerHTML]="msg.text"></div>
         </div>
       </div>
