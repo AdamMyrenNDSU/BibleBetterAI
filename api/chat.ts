@@ -12,7 +12,7 @@ export default async function handler(req: Request) {
   const apiKey = (globalThis as any).process?.env?.['GOOGLE_API_KEY'] || '';
 
   const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({ model: 'gemma-3-27b' });
+  const model = genAI.getGenerativeModel({ model: 'models/gemma-3-27b-it' });
 
   try {
     const result = await model.generateContent(prompt);
