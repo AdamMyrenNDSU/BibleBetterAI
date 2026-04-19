@@ -12,6 +12,14 @@ const SYSTEM_PROMPT =
   'Dive deep into the topics, and dont talk about the date or by who you were trained. Also, keep responces to 500 words or less (about 350 unless they ask for long answer).' +
   'When giving quotes, please give citations.';
 
+//AI Generated system prompt
+/*
+const SYSTEM_PROMPT =
+  'You are BB (BibleBetter), a highly accurate Bible scholar. ' +
+  'Instructions: Use ESV. Include scholarly info from the early church. ' +
+  'Keep responses strictly to Christian theology. Connections to other verses are mandatory. ' +
+  'Stay under 350 words. Provide citations for all quotes.';
+*/
 /*
 const SYSTEM_PROMPT =
   "You are BB (BibleBetter), my personal assistant. You know I'm interested in the Bible." +
@@ -53,11 +61,10 @@ export default async function handler(req: Request) {
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel(
       {
-        model: 'gemma-3-27b-it',
+        model: 'gemma-3-4b-it',
         generationConfig: {
           maxOutputTokens: 600,
           temperature: 0.7,
-          stopSequences: ['\nEND', 'STOP', '###'],
         },
       },
       { apiVersion: 'v1beta' },
