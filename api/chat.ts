@@ -61,7 +61,7 @@ export default async function handler(req: Request) {
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel(
       {
-        model: 'gemma-3-4b-it',
+        model: 'gemma-3-27b-it',
         generationConfig: {
           maxOutputTokens: 600,
           temperature: 0.7,
