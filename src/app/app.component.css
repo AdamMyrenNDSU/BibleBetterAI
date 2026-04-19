@@ -280,3 +280,36 @@ button:disabled {
   color: #fff;
   font-weight: 600;
 }
+
+/* Custom Scrollbar for Chrome, Safari, and Edge */
+.chat-window::-webkit-scrollbar {
+  width: 8px;
+}
+
+.chat-window::-webkit-scrollbar-track {
+  background: var(--primary-bg); /* Matches your background #131314 */
+}
+
+.chat-window::-webkit-scrollbar-thumb {
+  background: #3c4043; /* Subtle grey for the handle */
+  border-radius: 10px;
+  border: 2px solid var(--primary-bg); /* Creates a "floating" effect */
+}
+
+.chat-window::-webkit-scrollbar-thumb:hover {
+  background: #444746; /* Slightly lighter on hover */
+}
+
+/* For Firefox */
+.chat-window {
+  scrollbar-width: thin;
+  scrollbar-color: #3c4043 var(--primary-bg);
+}
+
+/* Fix input container height so it doesn't "jump" when hidden */
+.input-container {
+  min-height: 80px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
