@@ -9,7 +9,16 @@ export default async function handler(req: Request) {
     const apiKey = (globalThis as any).process?.env?.['GOOGLE_API_KEY'];
     const genAI = new GoogleGenerativeAI(apiKey);
 
-    const model = genAI.getGenerativeModel({ model: 'gemma-3-27b-it' }, { apiVersion: 'v1beta' });
+    const model = genAI.getGenerativeModel(
+      {
+        model: 'gemma-3-27b-it',
+        generationConfig: {
+          maxOutputTokens: 250, // Limit response length (crucial for speed)
+          temperature: 0.7, // Keep it creative but focused
+        },
+      },
+      { apiVersion: 'v1beta' },
+    );
 
     const result = await model.generateContent(prompt);
     const response = await result.response;
