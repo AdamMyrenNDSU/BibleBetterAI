@@ -64,8 +64,8 @@ export default async function handler(req: Request) {
       {
         model: 'gemma-3-27b-it',
         generationConfig: {
-          maxOutputTokens: 600,
-          temperature: 0.7,
+          maxOutputTokens: 1000,
+          temperature: 0.3,
         },
       },
       { apiVersion: 'v1beta' },
