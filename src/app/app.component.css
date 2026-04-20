@@ -388,19 +388,70 @@ input {
   }
 }
 
+@keyframes wordFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .hero-greeting .text-body {
   animation: wordFadeIn 0.4s ease-out forwards;
-  /* Tighten space: Remove margins and set line-height */
   margin-top: 0 !important;
-  line-height: 1.1 !important;
+  line-height: 1.4 !important; /* Your requested line-height */
+  letter-spacing: -0.02em;
 }
 
-/* 2. TIGHTEN SPACING ON HERO */
+/* 2. SPACING TIGHTENING (Desktop/General) */
 .is-hero .hero-greeting {
-  gap: 8px !important; /* Reduced space between avatar and words */
+  gap: 8px !important; /* Pulls avatar and text closer */
+  bottom: 8vh; /* Base height from bottom */
 }
 
-.is-hero .input-container {
-  /* Reduce space between the bottom input and the hero text */
-  padding-bottom: 20vh !important;
+/* 3. MOBILE-SPECIFIC TIGHTENING */
+@media (max-width: 600px) {
+  /* Pull the entire hero greeting closer to the input box */
+  .is-hero .hero-greeting {
+    bottom: 4vh !important; /* Lowered significantly for mobile */
+    gap: 4px !important; /* Extremely tight gap between logo and text */
+  }
+
+  /* Reduce the padding of the bottom container to bring input up */
+  .is-hero .input-container {
+    padding-bottom: 12vh !important;
+  }
+
+  /* Scale text-body for smaller screens to ensure it doesn't push the layout */
+  .is-hero .hero-greeting .text-body {
+    font-size: clamp(24px, 10vw, 36px) !important;
+    padding: 0 10px !important;
+  }
+
+  /* 1. Lift the input container higher from the bottom edge */
+  .input-container {
+    padding-bottom: 30px !important; /* Adjust this number to move it higher */
+    padding-top: 5px;
+    background: transparent; /* Makes it feel like it's floating */
+  }
+
+  /* 2. Slightly increase the height of the pill for better touch targets */
+  .input-pill {
+    height: 52px;
+    width: calc(100% - 32px); /* Slightly more margin on the sides */
+    padding: 0 12px 0 20px;
+  }
+
+  /* 3. Keep the hero greeting tight with the higher bar */
+  .is-hero .hero-greeting {
+    bottom: 12vh !important; /* Pushed up to match the higher bar */
+  }
+
+  /* 4. Ensure the chat window doesn't get cut off by the higher bar */
+  .chat-window {
+    padding-bottom: 100px;
+  }
 }
