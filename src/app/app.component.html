@@ -5,23 +5,23 @@
 
   <main class="chat-window">
     <div class="message-list" [class.is-thinking]="isTyping">
+      <!-- FIX: Added "let i = index" to the loop -->
       <div
         #messageRow
-        *ngFor="let msg of messages(); let first = first"
-        [ngClass]="[msg.role, first && messages().length === 1 ? 'hero-greeting' : '']"
+        *ngFor="let msg of messages(); let i = index"
+        [ngClass]="[msg.role, i === 0 && messages().length === 1 ? 'hero-greeting' : '']"
         class="message-row"
       >
         <div class="avatar" [attr.data-role]="msg.role"></div>
+
         <div class="content">
+          <!-- Now 'i' is defined and this check will work -->
           <div class="sender-name" *ngIf="!(i === 0 && messages().length === 1)">
             {{ msg.role === 'user' ? 'You' : 'BB' }}
           </div>
+
           <div class="text-body" [innerHTML]="msg.text"></div>
         </div>
-      </div>
-
-      <div *ngIf="isTyping" class="message-row ai">
-        <div class="loading-skeleton"></div>
       </div>
     </div>
   </main>
