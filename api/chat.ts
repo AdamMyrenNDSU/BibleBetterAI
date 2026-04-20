@@ -3,80 +3,6 @@ import { marked } from 'marked';
 
 export const config = { runtime: 'edge' };
 
-const SYSTEM_PROMPT =
-  "You are BB (BibleBetter), my personal assistant. You know I'm interested in the Bible. " +
-  'Be concise, include many connections with other Bible verses. Keep strictly to Christianity. ' +
-  'Weave in scholarly information from modern day and early church. Use ESV translation. ' +
-  'Responses should be 100-300 words unless a long answer is requested. Cite all quotes.';
-
-const GREETINGS = [
-  'What scripture is on your mind?',
-  'Ready to dive into the Word?',
-  'How can I help your study?',
-];
-
-export default async function handler(req: Request) {
-  try {
-    // 1. Ensure your frontend sends 'history' in the JSON body
-    const { prompt, stream, isGreeting, history = [] } = await req.json();
-
-    if (isGreeting) {
-      const randomGreeting = GREETINGS[Math.floor(Math.random() * GREETINGS.length)];
-      return new Response(JSON.stringify({ text: randomGreeting }), {
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
-
-    const apiKey = (globalThis as any).process?.env?.['GOOGLE_API_KEY'];
-    if (!apiKey) throw new Error('Missing API Key');
-
-    const genAI = new GoogleGenerativeAI(apiKey);
-
-    // 2. Use systemInstruction instead of injecting it into the prompt
-    // This saves tokens and keeps the model focused on the persona
-    const model = genAI.getGenerativeModel(
-      {
-        model: 'gemma-3-27b-it',
-        systemInstruction: SYSTEM_PROMPT,
-        generationConfig: { maxOutputTokens: 800, temperature: 0.7 },
-      },
-      { apiVersion: 'v1beta' },
-    );
-
-    // 3. Start chat with the existing history from the frontend
-    const chat = model.startChat({ history });
-    const encoder = new TextEncoder();
-
-    if (stream) {
-      const result = await chat.sendMessageStream(prompt);
-      const readable = new ReadableStream({
-        async start(controller) {
-          let cumulativeText = '';
-          for await (const chunk of result.stream) {
-            cumulativeText += chunk.text();
-            const html = await marked.parse(cumulativeText);
-            controller.enqueue(encoder.encode(html + '[[SPLIT]]'));
-          }
-          controller.close();
-        },
-      });
-      return new Response(readable);
-    }
-
-    const result = await chat.sendMessage(prompt);
-    const html = await marked.parse(result.response.text());
-    return new Response(JSON.stringify({ text: html }));
-  } catch (err: any) {
-    console.error('API Error:', err.message);
-    return new Response(JSON.stringify({ error: err.message }), { status: 500 });
-  }
-}
-
-/*import { GoogleGenerativeAI } from '@google/generative-ai';
-import { marked } from 'marked';
-
-export const config = { runtime: 'edge' };
-
 //Great prompt for Gemma 3 27b
 /*
 const SYSTEM_PROMPT =
@@ -96,7 +22,7 @@ const SYSTEM_PROMPT =
   'Keep responses strictly to Christian theology, and dont talk about yourself or who/when you were tranied by. Include many connections to other Bible verses.' +
   'Stay under 350 words. Your max ticket output is 600 so dont go over. Use a mix of bullets and paragraphs. Provide citations for all quotes, but dont include Bible version. ';
 */
-/*
+
 const SYSTEM_PROMPT =
   "You are BB (BibleBetter), my personal assistant. You know I'm interested in the Bible." +
   'You should be concise, include many connections with other Bible verses and passages. Keep stricktly to Christianity and christian ideologys, and dont talk about yourself.' +
@@ -171,4 +97,3 @@ export default async function handler(req: Request) {
     return new Response(JSON.stringify({ error: err.message }), { status: 500 });
   }
 }
-*/
